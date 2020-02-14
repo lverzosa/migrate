@@ -3,11 +3,6 @@ from timeit import default_timer as timer
 from datetime import timedelta, datetime
 from os import makedirs
 
-import os
-os.environ['REQUESTS_CA_BUNDLE'] = ""
-os.environ['CURL_CA_BUNDLE'] = ""
-
-
 # python 3.6
 def main():
     # define a parser to identify what component to import / export
