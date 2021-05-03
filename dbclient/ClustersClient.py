@@ -434,13 +434,21 @@ class ClustersClient(dbclient):
                 perms['name'] = policy_ids[pid]
                 acl_fp.write(json.dumps(perms) + '\n')
 
-    def log_instance_pools(self, log_file='instance_pools.log'):
+    def log_instance_pools(self, log_file='instance_pools.log', filter_on_clusters=False, clusters_log_file="clusters.log"):
+        filtered_pools = set()
+        if filter_on_clusters:
+            with open(self.get_export_dir() + clusters_log_file, 'r') as clusters_log_fp:
+                for line in clusters_log_fp:
+                    cluster_conf = json.loads(line)
+                    if 'instance_pool_id' in cluster_conf:
+                        filtered_pools.add(cluster_conf['instance_pool_id'])
         pool_log = self.get_export_dir() + log_file
         pools = self.get('/instance-pools/list').get('instance_pools', None)
         if pools:
             with open(pool_log, "w") as fp:
                 for x in pools:
-                    fp.write(json.dumps(x) + '\n')
+                    if not filter_on_clusters or x['instance_pool_id'] in filtered_pools:
+                        fp.write(json.dumps(x) + '\n')
 
     def log_instance_profiles(self, log_file='instance_profiles.log'):
         ip_log = self.get_export_dir() + log_file

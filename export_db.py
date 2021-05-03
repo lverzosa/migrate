@@ -272,6 +272,22 @@ def main():
         end = timer()
         print("Completed cleanup: " + str(timedelta(seconds=end - start)))
 
+    if args.export_user_clusters:
+        username = args.export_user_clusters
+        print("Export the clusters for {} configs at {}".format(username, now))
+        cl_c = ClustersClient(client_config)
+        start = timer()
+        # log the cluster json
+        cl_c.log_cluster_configs(filter_user=username)
+        cl_c.log_cluster_policies()
+        end = timer()
+        print("Complete Cluster Export Time: " + str(timedelta(seconds=end - start)))
+        # log the instance pools
+        print("Start instance pool logging ...")
+        start = timer()
+        cl_c.log_instance_pools(filter_on_clusters=False) # TODO export only applicable instance pools for cluster config
+        end = timer()
+        print("Complete Instance Pools Export Time: " + str(timedelta(seconds=end - start)))
 
 if __name__ == '__main__':
     main()

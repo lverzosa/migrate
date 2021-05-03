@@ -196,6 +196,10 @@ def get_export_parser():
 
     parser.add_argument('--bypass-windows-check', action='store_true',
                         help='By-pass windows os checker')
+
+    parser.add_argument('--export-user-clusters', action='store',
+                        help='User name that created the clusters')
+
     return parser
 
 
