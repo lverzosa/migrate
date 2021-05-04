@@ -200,6 +200,9 @@ def get_export_parser():
     parser.add_argument('--export-user-clusters', action='store',
                         help='User name that created the clusters')
 
+    parser.add_argument('--export-user-jobs', action='store',
+                        help='User name that created the jobs')
+
     return parser
 
 

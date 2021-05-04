@@ -289,5 +289,14 @@ def main():
         end = timer()
         print("Complete Instance Pools Export Time: " + str(timedelta(seconds=end - start)))
 
+    if args.export_user_jobs:
+        username = args.export_user_jobs
+        print('Exporting {} jobs:'.format(username))
+        jobs_c = JobsClient(client_config)
+        start = timer()
+        jobs_c.log_job_configs(users_list=[username])
+        end = timer()
+        print("Complete User Export Time: " + str(timedelta(seconds=end - start)))
+
 if __name__ == '__main__':
     main()
