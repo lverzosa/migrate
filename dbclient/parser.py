@@ -203,6 +203,9 @@ def get_export_parser():
     parser.add_argument('--export-user-jobs', action='store',
                         help='User name that created the jobs')
 
+    parser.add_argument('--home-workspace-acls', action='store',
+                        help='User home for acl export')
+
     return parser
 
 

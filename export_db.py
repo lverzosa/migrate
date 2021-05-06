@@ -298,5 +298,16 @@ def main():
         end = timer()
         print("Complete User Export Time: " + str(timedelta(seconds=end - start)))
 
+    if args.home_workspace_acls:
+        username = args.home_workspace_acls
+        print("Export the ACLs for in {} at {}".format(username, now))
+        ws_c = WorkspaceClient(client_config)
+        start = timer()
+        # log notebooks and directory acls
+        ws_c.log_all_workspace_acls(workspace_log_file="user_exports/{}/user_workspace.log".format(username),
+                                    dir_log_file="user_exports/{}/user_dirs.log".format(username))
+        end = timer()
+        print("Complete Workspace Permission Export Time: " + str(timedelta(seconds=end - start)))
+
 if __name__ == '__main__':
     main()
