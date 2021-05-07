@@ -139,7 +139,7 @@ class JobsClient(ClustersClient):
                 acl_resp = self.patch(api, acl_create_args)
                 print(acl_resp)
         # update the imported job names
-        # self.update_imported_job_names()
+        self.update_imported_job_names()
 
     def pause_all_jobs(self, pause=True):
         job_list = self.get('/jobs/list').get('jobs', None)
