@@ -307,6 +307,9 @@ def get_import_parser():
 
     parser.add_argument('--delete-all-jobs', action='store_true',
                         help='Delete all jobs')
+
+    parser.add_argument('--replace_jobs', action='store_true',
+                        help='Replaces jobs on import - default retain')
     return parser
 
 
