@@ -189,8 +189,14 @@ python export_db.py --profile DEMO --metastore --skip-failed
 # export all metastore entries on a specific cluster
 python export_db.py --profile DEMO --metastore --cluster-name "Test"
 
-# export all tables within a specific database
+# export all tables and views within a specific database
 python export_db.py --profile DEMO --metastore --cluster-name "Test" --database "my_db"
+
+# export only tables within a specific database
+python export_db.py --profile DEMO --metastore --cluster-name "Test" --database "my_db" --tables-only
+
+# export all views within a specific database
+python export_db.py --profile DEMO --metastore --cluster-name "Test" --database "my_db" --views-only
 ```
 
 To find legacy Hive tables that need to be repaired after a successful import, run the following:

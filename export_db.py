@@ -145,7 +145,7 @@ def main():
         if args.database is not None:
             # export only a single database with a given iam role
             database_name = args.database
-            hive_c.export_database(database_name, args.cluster_name, args.iam, has_unicode=args.metastore_unicode)
+            hive_c.export_database(database_name, args.cluster_name, args.iam, has_unicode=args.metastore_unicode, tables_only=args.tables_only, views_only=args.views_only)
         else:
             # export all of the metastore
             hive_c.export_hive_metastore(cluster_name=args.cluster_name, has_unicode=args.metastore_unicode)

@@ -206,6 +206,11 @@ def get_export_parser():
     parser.add_argument('--home-workspace-acls', action='store',
                         help='User home for acl export')
 
+    parser.add_argument('--tables-only', action='store_true',
+                        help='Export tables only for database')
+
+    parser.add_argument('--views-only', action='store_true',
+                        help='Export views only for database')
     return parser
 
 
