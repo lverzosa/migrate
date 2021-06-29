@@ -197,6 +197,9 @@ python export_db.py --profile DEMO --metastore --cluster-name "Test" --database 
 
 # export all views within a specific database
 python export_db.py --profile DEMO --metastore --cluster-name "Test" --database "my_db" --views-only
+
+# export all views within a specific database but strips location if part of view
+python export_db.py --profile DEMO --metastore --cluster-name "Test" --database "my_db" --views-only --strip-location-for-views
 ```
 
 To find legacy Hive tables that need to be repaired after a successful import, run the following:

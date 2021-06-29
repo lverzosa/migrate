@@ -211,6 +211,9 @@ def get_export_parser():
 
     parser.add_argument('--views-only', action='store_true',
                         help='Export views only for database')
+
+    parser.add_argument('--strip-location-for-views', action='store_true',
+                        help='For views export strip location workaround')
     return parser
 
 
