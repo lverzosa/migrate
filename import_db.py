@@ -98,11 +98,11 @@ def main():
         end = timer()
         print("Complete Cluster Import Time: " + str(timedelta(seconds=end - start)))
 
-    if args.jobs:
+    if args.jobs or args.replace_jobs:
         print("Importing the jobs configs at {0}".format(now))
         start = timer()
         jobs_c = JobsClient(client_config)
-        jobs_c.import_job_configs()
+        jobs_c.import_job_configs(replace_jobs=args.replace_jobs)
         end = timer()
         print("Complete Jobs Export Time: " + str(timedelta(seconds=end - start)))
 
