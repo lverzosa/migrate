@@ -218,6 +218,8 @@ def get_export_parser():
 
     parser.add_argument('--strip-location-for-views', action='store_true',
                         help='For views export strip location workaround')
+
+    parser.add_argument('--workspace-root', action='store', default='/', help='Root directory for workspace export')
     return parser
 
 
