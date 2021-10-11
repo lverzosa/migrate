@@ -97,11 +97,11 @@ def main():
         end = timer()
         print("Complete Cluster Import Time: " + str(timedelta(seconds=end - start)))
 
-    if args.jobs:
+    if args.jobs or args.replace_jobs:
         print("Importing the jobs configs at {0}".format(now))
         start = timer()
         jobs_c = JobsClient(client_config)
-        jobs_c.import_job_configs()
+        jobs_c.import_job_configs(replace_jobs=args.replace_jobs)
         end = timer()
         print("Complete Jobs Export Time: " + str(timedelta(seconds=end - start)))
 
@@ -113,6 +113,23 @@ def main():
         hive_c.import_hive_metastore(cluster_name=args.cluster_name, has_unicode=args.metastore_unicode)
         end = timer()
         print("Complete Metastore Import Time: " + str(timedelta(seconds=end - start)))
+
+    if args.table_acls:
+        print("Importing table acls configs at {0}".format(now))
+        start = timer()
+        table_acls_c = TableACLsClient(client_config)
+        # log table ACLS configs
+        notebook_exit_value = table_acls_c.import_table_acls()
+        end = timer()
+        print(f'Complete Table ACLs with exit value: {json.dumps(notebook_exit_value)}, Import Time: {timedelta(seconds=end - start)}')
+
+    if args.secrets:
+        print("Import secret scopes configs at {0}".format(now))
+        start = timer()
+        sc = SecretsClient(client_config)
+        sc.import_all_secrets()
+        end = timer()
+        print("Complete Secrets Import Time: " + str(timedelta(seconds=end - start)))
 
     if args.pause_all_jobs:
         print("Pause all current jobs {0}".format(now))

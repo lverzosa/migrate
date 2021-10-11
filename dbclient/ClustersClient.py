@@ -321,15 +321,21 @@ class ClustersClient(dbclient):
             list_of_profiles = [x['instance_profile_arn'] for x in ip_list]
         else:
             list_of_profiles = []
+        import_profiles_count = 0
         with open(ip_log, "r") as fp:
             for line in fp:
                 ip_arn = json.loads(line).get('instance_profile_arn', None)
                 if ip_arn not in list_of_profiles:
                     print("Importing arn: {0}".format(ip_arn))
                     resp = self.post('/instance-profiles/add', {'instance_profile_arn': ip_arn})
+                    if 'error_code' in resp:
+                        print("ERROR: Failed to add instance profile")
+                    else:
+                        import_profiles_count += 1
                     print(resp)
                 else:
-                    print("Skipping since profile exists: {0}".format(ip_arn))
+                    print("Skipping since profile already exists: {0}".format(ip_arn))
+        return import_profiles_count
 
     def is_spark_3(self, cid):
         spark_version = self.get(f'/clusters/get?cluster_id={cid}').get('spark_version', "")
@@ -338,15 +344,18 @@ class ClustersClient(dbclient):
         else:
             return False
 
-    def launch_cluster(self, iam_role=None):
+    def launch_cluster(self, iam_role=None, enable_table_acls=False):
         """ Launches a cluster to get DDL statements.
         Returns a cluster_id """
         # removed for now as Spark 3.0 will have backwards incompatible changes
         # version = self.get_latest_spark_version()
         import os
         real_path = os.path.dirname(os.path.realpath(__file__))
+
+        # add _table_acls suffix to cluster config path if enable_table_acls is set
+        cluster_json_postfix = '_table_acls' if enable_table_acls else ''
         if self.is_aws():
-            with open(real_path + '/../data/aws_cluster.json', 'r') as fp:
+            with open(f'{real_path}/../data/aws_cluster{cluster_json_postfix}.json', 'r') as fp:
                 cluster_json = json.loads(fp.read())
             if iam_role:
                 aws_attr = cluster_json['aws_attributes']
@@ -354,7 +363,7 @@ class ClustersClient(dbclient):
                 aws_attr['instance_profile_arn'] = iam_role
                 cluster_json['aws_attributes'] = aws_attr
         else:
-            with open(real_path + '/../data/azure_cluster.json', 'r') as fp:
+            with open(f'{real_path}/../data/azure_cluster{cluster_json_postfix}.json', 'r') as fp:
                 cluster_json = json.loads(fp.read())
         # set the latest spark release regardless of defined cluster json
         # cluster_json['spark_version'] = version['key']
@@ -434,13 +443,21 @@ class ClustersClient(dbclient):
                 perms['name'] = policy_ids[pid]
                 acl_fp.write(json.dumps(perms) + '\n')
 
-    def log_instance_pools(self, log_file='instance_pools.log'):
+    def log_instance_pools(self, log_file='instance_pools.log', filter_on_clusters=False, clusters_log_file="clusters.log"):
+        filtered_pools = set()
+        if filter_on_clusters:
+            with open(self.get_export_dir() + clusters_log_file, 'r') as clusters_log_fp:
+                for line in clusters_log_fp:
+                    cluster_conf = json.loads(line)
+                    if 'instance_pool_id' in cluster_conf:
+                        filtered_pools.add(cluster_conf['instance_pool_id'])
         pool_log = self.get_export_dir() + log_file
         pools = self.get('/instance-pools/list').get('instance_pools', None)
         if pools:
             with open(pool_log, "w") as fp:
                 for x in pools:
-                    fp.write(json.dumps(x) + '\n')
+                    if not filter_on_clusters or x['instance_pool_id'] in filtered_pools:
+                        fp.write(json.dumps(x) + '\n')
 
     def log_instance_profiles(self, log_file='instance_profiles.log'):
         ip_log = self.get_export_dir() + log_file
