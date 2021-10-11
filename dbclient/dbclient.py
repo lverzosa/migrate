@@ -33,6 +33,7 @@ class dbclient:
         self._is_verbose = configs['verbose']
         self._verify_ssl = configs['verify_ssl']
         self._file_format = configs['file_format']
+        self._is_overwrite_notebook = configs['overwrite_notebooks']
         if self._verify_ssl:
             # set these env variables if skip SSL verification is enabled
             os.environ['REQUESTS_CA_BUNDLE'] = ""
@@ -55,6 +56,25 @@ class dbclient:
         if self._file_format == 'SOURCE':
             return True
         return False
+
+    def is_overwrite_notebooks(self):
+        return self._is_overwrite_notebook
+
+    @staticmethod
+    def listdir(f_path):
+        ls = os.listdir(f_path)
+        for x in ls:
+            # remove hidden directories / files from function
+            if x.startswith('.'):
+                continue
+            yield x
+
+    @staticmethod
+    def walk(f_path):
+        for my_root, my_subdir, my_files in os.walk(f_path):
+            # filter out files starting with a '.'
+            filtered_files = list(filter(lambda x: not x.startswith('.'), my_files))
+            yield my_root, my_subdir, filtered_files
 
     def test_connection(self):
         # verify the proper url settings to configure this client
@@ -248,7 +268,7 @@ class dbclient:
                 self.replace_file_contents(old_account_id, new_aws_account_id, log_name)
         # # update group logs
         group_dir = log_dir + 'groups/'
-        groups = os.listdir(group_dir)
+        groups = self.listdir(group_dir)
         for group_name in groups:
             group_file = 'groups/' + group_name
             if os.path.exists(log_dir + group_file):
