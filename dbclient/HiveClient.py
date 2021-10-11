@@ -210,7 +210,8 @@ class HiveClient(ClustersClient):
 
     def export_database(self, db_name, cluster_name=None, iam_role=None, metastore_dir='metastore/',
                         fail_log='failed_metastore.log', success_log='success_metastore.log',
-                        has_unicode=False, db_log='database_details.log'):
+                        has_unicode=False, db_log='database_details.log', tables_only=False, views_only=False,
+                        strip_location_for_views=False):
         """
         :param db_name:  database name
         :param cluster_name: cluster to run against if provided
@@ -248,7 +249,7 @@ class HiveClient(ClustersClient):
             fp.write(json.dumps(db_json) + '\n')
         os.makedirs(self.get_export_dir() + metastore_dir + db_name, exist_ok=True)
         self.log_all_tables(db_name, cid, ec_id, metastore_dir, failed_metastore_log_path,
-                            success_metastore_log_path, current_iam, has_unicode)
+                            success_metastore_log_path, current_iam, has_unicode, tables_only, views_only, strip_location_for_views)
 
     def export_hive_metastore(self, cluster_name=None, metastore_dir='metastore/', db_log='database_details.log',
                               success_log='success_metastore.log', fail_log='failed_metastore.log', has_unicode=False):
@@ -417,7 +418,7 @@ class HiveClient(ClustersClient):
         return all_dbs
 
     def log_all_tables(self, db_name, cid, ec_id, metastore_dir, err_log_path, success_log_path, iam,
-                       has_unicode=False):
+                       has_unicode=False, tables_only=False, views_only=False, strip_location_for_views=False):
         all_tables_cmd = 'all_tables = [x.tableName for x in spark.sql("show tables in {0}").collect()]'.format(db_name)
         results = self.submit_command(cid, ec_id, all_tables_cmd)
         results = self.submit_command(cid, ec_id, 'print(len(all_tables))')
@@ -435,17 +436,19 @@ class HiveClient(ClustersClient):
                 for table_name in table_names:
                     print("Table: {0}".format(table_name))
                     is_successful = self.log_table_ddl(cid, ec_id, db_name, table_name, metastore_dir,
-                                                       err_log_path, has_unicode)
+                                                       err_log_path, has_unicode, tables_only, views_only, strip_location_for_views)
                     if is_successful == 0:
                         print(f"Exported {db_name}.{table_name}")
                         success_item = {'table': f'{db_name}.{table_name}', 'iam': iam}
                         sfp.write(json.dumps(success_item))
                         sfp.write('\n')
+                    elif is_successful == 1:
+                        print(f"Ignored {db_name}.{table_name}")
                     else:
                         print("Logging failure")
         return True
 
-    def log_table_ddl(self, cid, ec_id, db_name, table_name, metastore_dir, err_log_path, has_unicode):
+    def log_table_ddl(self, cid, ec_id, db_name, table_name, metastore_dir, err_log_path, has_unicode, tables_only=False, views_only=False, strip_location_for_view=False):
         """
         Log the table DDL to handle large DDL text
         :param cid: cluster id
@@ -459,6 +462,12 @@ class HiveClient(ClustersClient):
         """
         set_ddl_str_cmd = f'ddl_str = spark.sql("show create table {db_name}.{table_name}").collect()[0][0]'
         ddl_str_resp = self.submit_command(cid, ec_id, set_ddl_str_cmd)
+        table_type = self.submit_command(cid, ec_id, "print(ddl_str.split(' ')[1])")['data']
+        if table_type == 'TABLE' and views_only or table_type == 'VIEW' and tables_only:
+            print(f"Ignoring {db_name}.{table_name}")
+            return 1
+        if table_type == 'VIEW' and strip_location_for_view:
+            self.submit_command(cid, ec_id, "ddl_str = (ddl_str + ' ')[0:ddl_str.rfind('LOCATION ')]")
         with open(err_log_path, 'a') as err_log:
             if ddl_str_resp['resultType'] != 'text':
                 ddl_str_resp['table'] = '{0}.{1}'.format(db_name, table_name)

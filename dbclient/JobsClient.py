@@ -52,7 +52,9 @@ class JobsClient(ClustersClient):
         jobs = self.get_jobs_list()
         job_ids = {}
         for job in jobs:
-            job_ids[job['settings']['name']] = job['job_id']
+            if(not job_ids[job['settings']['name']]):
+                job_ids[job['settings']['name']] = []
+            job_ids[job['settings']['name']].append(job['job_id'])
         return job_ids
 
     def update_imported_job_names(self):
@@ -102,7 +104,7 @@ class JobsClient(ClustersClient):
                 job_perms['job_name'] = new_job_name
                 acl_fp.write(json.dumps(job_perms) + '\n')
 
-    def import_job_configs(self, log_file='jobs.log', acl_file='acl_jobs.log'):
+    def import_job_configs(self, log_file='jobs.log', acl_file='acl_jobs.log', replace_jobs=False):
         jobs_log = self.get_export_dir() + log_file
         acl_jobs_log = self.get_export_dir() + acl_file
         if not os.path.exists(jobs_log):
@@ -111,6 +113,7 @@ class JobsClient(ClustersClient):
         # get an old cluster id to new cluster id mapping object
         cluster_mapping = self.get_cluster_id_mapping()
         old_2_new_policy_ids = self.get_new_policy_id_dict()  # dict { old_policy_id : new_policy_id }
+        jobs_to_replace = []
 
         def adjust_ids_for_cluster(settings): #job_settings or task_settings
             if 'existing_cluster_id' in settings:
@@ -159,12 +162,15 @@ class JobsClient(ClustersClient):
                     print("Resetting job to use default cluster configs due to expired configurations.")
                     job_settings['new_cluster'] = self.get_jobs_default_cluster_conf()
                     create_resp_retry = self.post('/jobs/create', job_settings)
+                # remove old job
+                if(replace_jobs):
+                    jobs_to_replace.append(job_settings['name'].split(':::')[0])
         # update the jobs with their ACLs
+        job_id_by_name = self.get_job_id_by_name()
         with open(acl_jobs_log, 'r') as acl_fp:
-            job_id_by_name = self.get_job_id_by_name()
             for line in acl_fp:
                 acl_conf = json.loads(line)
-                current_job_id = job_id_by_name[acl_conf['job_name']]
+                current_job_id = job_id_by_name[acl_conf['job_name']][0]
                 job_path = f'jobs/{current_job_id}'  # contains `/jobs/{job_id}` path
                 api = f'/preview/permissions/{job_path}'
                 # get acl permissions for jobs
@@ -172,6 +178,11 @@ class JobsClient(ClustersClient):
                 acl_create_args = {'access_control_list': acl_perms}
                 acl_resp = self.patch(api, acl_create_args)
                 print(acl_resp)
+        if(replace_jobs):
+            # remove old jobs
+            for job_name in jobs_to_replace:
+                for job_id in job_id_by_name[job_name]:
+                    self.post('/jobs/delete', {'job_id': job_id})
         # update the imported job names
         self.update_imported_job_names()
 

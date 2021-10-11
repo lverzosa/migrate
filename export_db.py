@@ -60,7 +60,8 @@ def main():
         start = timer()
         # log notebooks and libraries
         ws_c.init_workspace_logfiles()
-        num_notebooks = ws_c.log_all_workspace_items()
+        workspace_root = ('' if args.workspace_root.startswith('/') else '/') + args.workspace_root
+        num_notebooks = ws_c.log_all_workspace_items(workspace_root)
         print("Total number of notebooks logged: ", num_notebooks)
         end = timer()
         print("Complete Workspace Export Time: " + str(timedelta(seconds=end - start)))
@@ -145,7 +146,7 @@ def main():
         if args.database is not None:
             # export only a single database with a given iam role
             database_name = args.database
-            hive_c.export_database(database_name, args.cluster_name, args.iam, has_unicode=args.metastore_unicode)
+            hive_c.export_database(database_name, args.cluster_name, args.iam, has_unicode=args.metastore_unicode, tables_only=args.tables_only, views_only=args.views_only, strip_location_for_views=args.strip_location_for_views)
         else:
             # export all of the metastore
             hive_c.export_hive_metastore(cluster_name=args.cluster_name, has_unicode=args.metastore_unicode)
@@ -293,6 +294,42 @@ def main():
         end = timer()
         print("Completed cleanup: " + str(timedelta(seconds=end - start)))
 
+    if args.export_user_clusters:
+        username = args.export_user_clusters
+        print("Export the clusters for {} configs at {}".format(username, now))
+        cl_c = ClustersClient(client_config)
+        start = timer()
+        # log the cluster json
+        cl_c.log_cluster_configs(filter_user=username)
+        cl_c.log_cluster_policies()
+        end = timer()
+        print("Complete Cluster Export Time: " + str(timedelta(seconds=end - start)))
+        # log the instance pools
+        print("Start instance pool logging ...")
+        start = timer()
+        cl_c.log_instance_pools(filter_on_clusters=False) # TODO export only applicable instance pools for cluster config
+        end = timer()
+        print("Complete Instance Pools Export Time: " + str(timedelta(seconds=end - start)))
+
+    if args.export_user_jobs:
+        username = args.export_user_jobs
+        print('Exporting {} jobs:'.format(username))
+        jobs_c = JobsClient(client_config)
+        start = timer()
+        jobs_c.log_job_configs(users_list=[username])
+        end = timer()
+        print("Complete User Export Time: " + str(timedelta(seconds=end - start)))
+
+    if args.home_workspace_acls:
+        username = args.home_workspace_acls
+        print("Export the ACLs for in {} at {}".format(username, now))
+        ws_c = WorkspaceClient(client_config)
+        start = timer()
+        # log notebooks and directory acls
+        ws_c.log_all_workspace_acls(workspace_log_file="user_exports/{}/user_workspace.log".format(username),
+                                    dir_log_file="user_exports/{}/user_dirs.log".format(username))
+        end = timer()
+        print("Complete Workspace Permission Export Time: " + str(timedelta(seconds=end - start)))
 
 if __name__ == '__main__':
     main()

@@ -200,6 +200,26 @@ def get_export_parser():
 
     parser.add_argument('--bypass-windows-check', action='store_true',
                         help='By-pass windows os checker')
+
+    parser.add_argument('--export-user-clusters', action='store',
+                        help='User name that created the clusters')
+
+    parser.add_argument('--export-user-jobs', action='store',
+                        help='User name that created the jobs')
+
+    parser.add_argument('--home-workspace-acls', action='store',
+                        help='User home for acl export')
+
+    parser.add_argument('--tables-only', action='store_true',
+                        help='Export tables only for database')
+
+    parser.add_argument('--views-only', action='store_true',
+                        help='Export views only for database')
+
+    parser.add_argument('--strip-location-for-views', action='store_true',
+                        help='For views export strip location workaround')
+
+    parser.add_argument('--workspace-root', action='store', default='/', help='Root directory for workspace export')
     return parser
 
 
@@ -312,6 +332,9 @@ def get_import_parser():
 
     parser.add_argument('--delete-all-jobs', action='store_true',
                         help='Delete all jobs')
+
+    parser.add_argument('--replace_jobs', action='store_true',
+                        help='Replaces jobs on import - default retain')
     return parser
 
 

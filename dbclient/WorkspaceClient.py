@@ -354,8 +354,8 @@ class WorkspaceClient(ScimClient):
                 for y in libraries:
                     libs_fp.write(json.dumps(y) + '\n')
             # log all directories to export permissions
-            if folders:
-                with open(workspace_dir_log, "a") as dir_fp:
+            with open(workspace_dir_log, "a") as dir_fp:
+                if folders:
                     for f in folders:
                         dir_path = f.get('path', None)
                         if not WorkspaceClient.is_user_trash(dir_path):

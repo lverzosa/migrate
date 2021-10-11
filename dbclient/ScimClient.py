@@ -16,6 +16,7 @@ class ScimClient(dbclient):
             with open(user_log, "w") as fp:
                 for x in users:
                     fullname = x.get('name', None)
+                    print(fullname)
                     if fullname:
                         given_name = fullname.get('givenName', None)
                         # if user is an admin, skip this user entry
