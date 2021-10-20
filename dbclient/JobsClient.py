@@ -52,7 +52,8 @@ class JobsClient(ClustersClient):
         jobs = self.get_jobs_list()
         job_ids = {}
         for job in jobs:
-            if(not job_ids[job['settings']['name']]):
+            current_job = job_ids.get(job['settings']['name'])
+            if (not current_job):
                 job_ids[job['settings']['name']] = []
             job_ids[job['settings']['name']].append(job['job_id'])
         return job_ids
